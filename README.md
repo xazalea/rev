@@ -54,13 +54,17 @@ No chat interface - the agent actively tries different things until it finds a s
 ### Prerequisites
 
 - Node.js 18+ and npm
-- (Optional) gpt4free-ts server for AI features
+- (Optional) OpenReason for enhanced agentic reasoning
 
 ### Installation
 
 ```bash
 # Install dependencies
 npm install
+
+# Optional: Install OpenReason for enhanced reasoning
+# The app works without it, but with basic fallback reasoning
+npm install github:CaviraOSS/OpenReason
 
 # Run in development mode
 npm run dev
@@ -71,6 +75,8 @@ npm run build
 # Start the application
 npm start
 ```
+
+**Note**: OpenReason is optional. The agentic engine includes fallback reasoning that works without OpenReason, though with reduced capabilities. See [INSTALL.md](INSTALL.md) for more details.
 
 ### Agentic Engine Setup
 
