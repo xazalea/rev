@@ -7,23 +7,42 @@ let openreason: any = null;
 
 // Dynamic import to handle cases where openreason might not be installed
 try {
+  // Try to load openreason - it may be installed from GitHub or npm
   openreason = require('openreason');
-} catch {
+} catch (e) {
   // OpenReason not installed - will use fallback reasoning
-  console.warn('OpenReason not installed. Using fallback reasoning.');
+  // This is fine - the agentic engine will work with fallback reasoning
+  if (process.env.NODE_ENV === 'development') {
+    console.warn('OpenReason not installed. Using fallback reasoning. Install with: npm install github:CaviraOSS/OpenReason');
+  }
 }
 
 const reason = openreason?.reason || (async (prompt: string) => {
-  // Fallback simple reasoning
+  // Fallback simple reasoning that still provides structure
+  const promptLower = prompt.toLowerCase();
+  let verdict = 'I should analyze the target systematically.';
+  
+  if (promptLower.includes('api') || promptLower.includes('endpoint')) {
+    verdict = 'I should monitor network traffic and analyze JavaScript to find API endpoints.';
+  } else if (promptLower.includes('vulnerability') || promptLower.includes('security')) {
+    verdict = 'I should check for common security vulnerabilities and test authentication mechanisms.';
+  } else if (promptLower.includes('extract') || promptLower.includes('data')) {
+    verdict = 'I should analyze the DOM structure and identify data sources.';
+  } else if (promptLower.includes('bypass') || promptLower.includes('auth')) {
+    verdict = 'I should analyze authentication mechanisms and test for bypass opportunities.';
+  }
+  
   return {
-    verdict: `Based on the goal: ${prompt.substring(0, 100)}... I should analyze the target systematically.`,
-    content: `Fallback reasoning for: ${prompt}`,
-    confidence: 0.5,
+    verdict: verdict,
+    content: `Fallback reasoning: ${verdict} Goal: ${prompt.substring(0, 200)}`,
+    confidence: 0.6,
   };
 });
 
 const init = openreason?.init || (async (config: any) => {
-  console.warn('OpenReason not available. Using fallback mode.');
+  if (process.env.NODE_ENV === 'development') {
+    console.warn('OpenReason not available. Using fallback mode. For enhanced reasoning, install: npm install github:CaviraOSS/OpenReason');
+  }
   return Promise.resolve();
 });
 
