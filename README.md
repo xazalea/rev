@@ -8,8 +8,8 @@ A professional reverse engineering tool powered by **agentic AI** that automatic
 1. **Target URL** - The website you want to analyze
 2. **Objective** - What you want to accomplish (e.g., "Find all API endpoints", "Extract user data", "Bypass authentication")
 
-The **Agentic Engine** powered by [OpenReason](https://github.com/CaviraOSS/OpenReason) then:
-- **Reasons** through the problem using adaptive reasoning
+The **Agentic Engine** powered by [OpenRouter](https://openrouter.ai) then:
+- **Reasons** through the problem using AI models
 - **Plans** multiple strategies to accomplish your goal
 - **Executes** actions using specialized reverse engineering tools
 - **Tries different approaches** if one fails
@@ -19,8 +19,8 @@ No chat interface - the agent actively tries different things until it finds a s
 
 ## Features
 
-### 🤖 Agentic Engine (Powered by OpenReason)
-- **Adaptive Reasoning**: Uses OpenReason's classifier → skeleton → solver → verifier → finalizer pipeline
+### 🤖 Agentic Engine (Powered by OpenRouter)
+- **AI-Powered Reasoning**: Uses OpenRouter to access multiple AI models (GPT-4, Claude, Gemini, etc.)
 - **Multiple Strategies**: Automatically tries different approaches if one fails
 - **Specialized Agents**: 
   - API Discovery
@@ -80,23 +80,25 @@ npm start
 
 ### Agentic Engine Setup
 
-The Agentic Engine uses [OpenReason](https://github.com/CaviraOSS/OpenReason) for adaptive reasoning. You need to configure an LLM provider.
+The Agentic Engine uses [OpenRouter](https://openrouter.ai) to access multiple AI models. You need an OpenRouter API key.
 
-1. **Install OpenReason** (if not already installed):
-```bash
-npm install openreason
-```
+1. **Get OpenRouter API Key**:
+   - Visit [openrouter.ai](https://openrouter.ai)
+   - Sign up and get your API key
+   - Add credits to your account
 
-2. **Configure API Key**:
-   - Open rev. application
+2. **Configure in rev.**:
+   - Open rev. application (web or Electron)
    - Go to "Agentic Engine" tab
-   - Click settings icon
-   - Enter your API key for your preferred provider:
-     - OpenAI (recommended)
-     - Anthropic
-     - Google
-     - xAI
-   - Select provider and save
+   - Click settings icon (⚙️)
+   - Enter your OpenRouter API key
+   - Select your preferred model:
+     - GPT-4o (recommended for best results)
+     - Claude 3.5 Sonnet
+     - GPT-4 Turbo
+     - Gemini Pro
+     - Or any other model on OpenRouter
+   - Save settings
 
 3. **Use the Agentic Engine**:
    - Enter target URL
@@ -106,7 +108,7 @@ npm install openreason
    - Watch as the agent tries different strategies
 
 The agent will:
-- Reason through the problem
+- Reason through the problem using AI
 - Plan multiple strategies
 - Execute actions using available tools
 - Try alternative approaches if needed
@@ -114,11 +116,35 @@ The agent will:
 
 ## Tech Stack
 
-- **Electron** - Desktop application framework
+- **Electron** - Desktop application framework (optional)
 - **React + TypeScript** - Frontend UI
 - **Vite** - Build tool
-- **OpenReason** - Adaptive reasoning engine for agentic capabilities
+- **OpenRouter** - AI model gateway for agentic reasoning
+- **Web Tools** - Browser-compatible reverse engineering tools
 - **Specialized RE Tools** - Network monitoring, script injection, DOM analysis, etc.
+
+## Deployment
+
+### Vercel (Web)
+
+The app is configured for Vercel deployment:
+
+1. Connect your GitHub repository to Vercel
+2. Set environment variable `OPENROUTER_API_KEY` (optional - users can also enter it in UI)
+3. Deploy!
+
+The web version works in browsers and uses web-compatible tools.
+
+### Electron (Desktop)
+
+For desktop deployment:
+
+```bash
+npm run build
+npm start
+```
+
+The Electron version has access to more powerful tools like network interception.
 
 ## How It Works
 
