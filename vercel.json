@@ -1,8 +1,8 @@
 {
-  "buildCommand": "npm run build:renderer",
+  "buildCommand": "npm run build:web",
   "outputDirectory": "dist/renderer",
-  "devCommand": "npm run dev:renderer",
-  "installCommand": "npm install",
+  "devCommand": "npm run dev:web",
+  "installCommand": "npm install --legacy-peer-deps",
   "framework": "vite",
   "rewrites": [
     {
@@ -11,7 +11,7 @@
     }
   ],
   "env": {
-    "OPENROUTER_API_KEY": "@openrouter_api_key"
+    "NODE_ENV": "production"
   }
 }
 

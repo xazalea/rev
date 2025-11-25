@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './styles.css';
 import './components/components.css';
+// Import web shim for browser compatibility
+import '@lib/web-shim';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

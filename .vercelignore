@@ -1,0 +1,6 @@
+dist/main
+dist/preload
+src/main
+src/renderer/index.html
+*.log
+

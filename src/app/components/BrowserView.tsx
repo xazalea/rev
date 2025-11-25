@@ -1,15 +1,21 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { isElectron } from '@lib/web-shim';
 
 interface BrowserViewProps {
   url: string;
 }
 
 export function BrowserView({ url }: BrowserViewProps) {
-  // In Electron mode, BrowserView is handled by Electron's BrowserView API
-  // In web mode, show iframe or placeholder
-  const isElectron = typeof window !== 'undefined' && (window as any).electronAPI;
-  
+  const [iframeKey, setIframeKey] = useState(0);
+
+  useEffect(() => {
+    if (url) {
+      setIframeKey(prev => prev + 1);
+    }
+  }, [url]);
+
   if (isElectron) {
+    // In Electron, BrowserView is handled by main process
     return (
       <div className="browser-view">
         <div className="browser-placeholder">
@@ -31,11 +37,17 @@ export function BrowserView({ url }: BrowserViewProps) {
     <div className="browser-view">
       {url ? (
         <iframe
+          key={iframeKey}
           src={url}
           className="browser-iframe"
           title="Browser View"
-          sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
-          style={{ width: '100%', height: '100%', border: 'none' }}
+          sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"
+          style={{
+            width: '100%',
+            height: '100%',
+            border: 'none',
+            background: 'white',
+          }}
         />
       ) : (
         <div className="browser-placeholder">

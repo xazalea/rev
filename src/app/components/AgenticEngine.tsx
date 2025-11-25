@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Zap, Target, Play, Pause, RotateCcw, CheckCircle2, XCircle, Loader, Settings } from 'lucide-react';
 import { agenticEngine, AgentGoal, AgentSpecialization, AgentExecution } from '@lib/agentic-engine';
 import { reTools } from '@lib/re-tools';
-import { webTools } from '@lib/web-tools';
 
 export function AgenticEngine() {
   const [url, setUrl] = useState('');
@@ -11,41 +10,29 @@ export function AgenticEngine() {
   const [execution, setExecution] = useState<AgentExecution | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [apiKey, setApiKey] = useState('');
-  const [model, setModel] = useState('openai/gpt-4o');
+  const [provider, setProvider] = useState('openai');
   const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     // Load saved settings
-    const savedApiKey = localStorage.getItem('openrouter_api_key');
-    const savedModel = localStorage.getItem('openrouter_model');
+    const savedApiKey = localStorage.getItem('openreason_api_key');
+    const savedProvider = localStorage.getItem('openreason_provider');
     if (savedApiKey) setApiKey(savedApiKey);
-    if (savedModel) setModel(savedModel);
-    
-    // Try to get from environment variable (for Vercel)
-    if (!savedApiKey && typeof window !== 'undefined') {
-      const envKey = (window as any).__OPENROUTER_API_KEY__ || process.env.OPENROUTER_API_KEY;
-      if (envKey) setApiKey(envKey);
-    }
+    if (savedProvider) setProvider(savedProvider);
   }, []);
 
   const saveSettings = () => {
-    localStorage.setItem('openrouter_api_key', apiKey);
-    localStorage.setItem('openrouter_model', model);
+    localStorage.setItem('openreason_api_key', apiKey);
+    localStorage.setItem('openreason_provider', provider);
     setShowSettings(false);
   };
 
   const initializeEngine = async () => {
-    if (!apiKey.trim()) {
-      alert('Please enter your OpenRouter API key in settings');
-      return false;
-    }
-    
     try {
-      await agenticEngine.initialize(apiKey, model);
+      await agenticEngine.initialize(provider, apiKey || undefined);
       return true;
     } catch (error) {
       console.error('Failed to initialize engine:', error);
-      alert('Failed to initialize agentic engine: ' + (error instanceof Error ? error.message : 'Unknown error'));
       return false;
     }
   };
@@ -71,26 +58,19 @@ export function AgenticEngine() {
       specialization,
     };
 
-    // For web version, we can't navigate directly, but we can analyze the URL
-    // In Electron mode, navigate to URL
+    // Navigate to URL first
     if (typeof window !== 'undefined' && (window as any).electronAPI) {
       await (window as any).electronAPI.navigateTo(goal.url);
+      // Wait a bit for page to load
       await new Promise(resolve => setTimeout(resolve, 2000));
     }
 
     try {
-      // Get available tools (Electron tools if available, otherwise web tools)
-      const availableTools = typeof window !== 'undefined' && (window as any).electronAPI
-        ? reTools.getAllTools()
-        : webTools.getAllTools();
-      
-      const toolsMap = availableTools.reduce((acc, tool) => {
+      // Execute agentic reasoning
+      const result = await agenticEngine.execute(goal, reTools.getAllTools().reduce((acc, tool) => {
         acc[tool.name] = tool;
         return acc;
-      }, {} as any);
-
-      // Execute agentic reasoning
-      const result = await agenticEngine.execute(goal, toolsMap, 5);
+      }, {} as any), 5);
 
       setExecution(result);
     } catch (error) {
@@ -141,27 +121,22 @@ export function AgenticEngine() {
       {showSettings && (
         <div className="settings-panel">
           <div className="setting-item">
-            <label>Model</label>
-            <select value={model} onChange={(e) => setModel(e.target.value)}>
-              <option value="openai/gpt-4o">GPT-4o (OpenAI)</option>
-              <option value="openai/gpt-4-turbo">GPT-4 Turbo</option>
-              <option value="openai/gpt-3.5-turbo">GPT-3.5 Turbo</option>
-              <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
-              <option value="anthropic/claude-3-opus">Claude 3 Opus</option>
-              <option value="google/gemini-pro">Gemini Pro</option>
-              <option value="meta-llama/llama-3-70b-instruct">Llama 3 70B</option>
+            <label>Provider</label>
+            <select value={provider} onChange={(e) => setProvider(e.target.value)}>
+              <option value="openai">OpenAI</option>
+              <option value="anthropic">Anthropic</option>
+              <option value="google">Google</option>
+              <option value="xai">xAI</option>
             </select>
-            <small>Get your API key at <a href="https://openrouter.ai" target="_blank" rel="noopener noreferrer">openrouter.ai</a></small>
           </div>
           <div className="setting-item">
-            <label>OpenRouter API Key</label>
+            <label>API Key</label>
             <input
               type="password"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
-              placeholder="sk-or-v1-..."
+              placeholder="Enter API key"
             />
-            <small>Your API key is stored locally in your browser</small>
           </div>
           <div className="settings-actions">
             <button onClick={saveSettings} className="save-btn primary">

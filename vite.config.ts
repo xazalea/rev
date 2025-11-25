@@ -13,8 +13,10 @@ export default defineConfig({
   build: {
     outDir: 'dist/renderer',
     rollupOptions: {
-      input: {
-        main: path.resolve(__dirname, 'src/renderer/index.html'),
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+        },
       },
     },
   },
@@ -22,7 +24,7 @@ export default defineConfig({
     port: 5173,
   },
   define: {
-    'process.env': process.env,
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
   },
 });
 
