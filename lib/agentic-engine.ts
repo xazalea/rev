@@ -1,50 +1,11 @@
 /**
- * Agentic Reasoning Engine powered by OpenReason
+ * Agentic Reasoning Engine powered by OpenRouter
  * Specialized agents for reverse engineering tasks
  */
 
-let openreason: any = null;
+import { OpenRouterClient } from './openrouter-client';
 
-// Dynamic import to handle cases where openreason might not be installed
-try {
-  // Try to load openreason - it may be installed from GitHub or npm
-  openreason = require('openreason');
-} catch (e) {
-  // OpenReason not installed - will use fallback reasoning
-  // This is fine - the agentic engine will work with fallback reasoning
-  if (process.env.NODE_ENV === 'development') {
-    console.warn('OpenReason not installed. Using fallback reasoning. Install with: npm install github:CaviraOSS/OpenReason');
-  }
-}
-
-const reason = openreason?.reason || (async (prompt: string) => {
-  // Fallback simple reasoning that still provides structure
-  const promptLower = prompt.toLowerCase();
-  let verdict = 'I should analyze the target systematically.';
-  
-  if (promptLower.includes('api') || promptLower.includes('endpoint')) {
-    verdict = 'I should monitor network traffic and analyze JavaScript to find API endpoints.';
-  } else if (promptLower.includes('vulnerability') || promptLower.includes('security')) {
-    verdict = 'I should check for common security vulnerabilities and test authentication mechanisms.';
-  } else if (promptLower.includes('extract') || promptLower.includes('data')) {
-    verdict = 'I should analyze the DOM structure and identify data sources.';
-  } else if (promptLower.includes('bypass') || promptLower.includes('auth')) {
-    verdict = 'I should analyze authentication mechanisms and test for bypass opportunities.';
-  }
-  
-  return {
-    verdict: verdict,
-    content: `Fallback reasoning: ${verdict} Goal: ${prompt.substring(0, 200)}`,
-    confidence: 0.6,
-  };
-});
-
-const init = openreason?.init || (async (config: any) => {
-  if (process.env.NODE_ENV === 'development') {
-    console.warn('OpenReason not available. Using fallback mode. For enhanced reasoning, install: npm install github:CaviraOSS/OpenReason');
-  }
-  return Promise.resolve();
-});
+let openRouterClient: OpenRouterClient | null = null;
 
 export interface AgentGoal {
   url: string;
@@ -90,31 +51,23 @@ export interface AgentExecution {
 class AgenticEngine {
   private initialized = false;
   private currentExecution: AgentExecution | null = null;
+  private model: string = 'openai/gpt-4o';
 
-  async initialize(provider: string = 'openai', apiKey?: string) {
-    if (this.initialized) return;
-
-    const config: any = {
-      provider: provider || 'openai',
-      model: 'gpt-4o',
-      simpleModel: 'gpt-3.5-turbo',
-      complexModel: 'gpt-4o',
-      memory: {
-        enabled: true,
-        path: './data/agent-memory.db',
-      },
-      graph: {
-        enabled: true,
-        checkpoint: true,
-        threadPrefix: 'rev-agent',
-      },
-    };
-
-    if (apiKey) {
-      config.apiKey = apiKey;
+  async initialize(apiKey: string, model?: string) {
+    if (this.initialized && openRouterClient) {
+      if (model && openRouterClient) {
+        openRouterClient.setModel(model);
+        this.model = model;
+      }
+      return;
     }
 
-    await init(config);
+    if (!apiKey) {
+      throw new Error('OpenRouter API key is required');
+    }
+
+    this.model = model || 'openai/gpt-4o';
+    openRouterClient = new OpenRouterClient(apiKey, this.model);
     this.initialized = true;
   }
 
@@ -171,17 +124,16 @@ Reason through: What steps are needed? What tools should I use? What strategies 
    * Execute agentic reasoning to plan actions
    */
   async plan(goal: AgentGoal, context: any): Promise<AgentAction[]> {
-    if (!this.initialized) {
-      await this.initialize();
+    if (!this.initialized || !openRouterClient) {
+      throw new Error('Agentic engine not initialized. Call initialize() with OpenRouter API key first.');
     }
 
     const prompt = this.createReasoningPrompt(goal, context);
     
     try {
-      const reasoning = await reason(prompt);
+      const reasoning = await openRouterClient.reason(prompt, JSON.stringify(context));
       
       // Parse the reasoning result to extract actions
-      // OpenReason returns structured reasoning, we extract actionable steps
       const actions = this.parseReasoningToActions(reasoning, goal);
       return actions;
     } catch (error) {
@@ -363,14 +315,14 @@ Reason through: What steps are needed? What tools should I use? What strategies 
 
         // If not successful, try next strategy
         attempts++;
-        if (attempts < maxAttempts) {
-          // Use OpenReason to determine next strategy
+        if (attempts < maxAttempts && openRouterClient) {
+          // Use OpenRouter to determine next strategy
           const nextStrategyPrompt = `Previous attempts failed. Goal: ${goal.objective}. 
 Previous steps: ${JSON.stringify(this.currentExecution.steps.slice(-3))}.
 What alternative strategy should I try?`;
           
           try {
-            const nextStrategy = await reason(nextStrategyPrompt);
+            const nextStrategy = await openRouterClient.reason(nextStrategyPrompt);
             strategies[attempts] = nextStrategy.verdict || `strategy-${attempts}`;
           } catch {
             // Continue with default strategies
@@ -407,15 +359,18 @@ Has the goal been accomplished? Answer yes or no with reasoning.`;
   }
 
   /**
-   * Verify results using OpenReason
+   * Verify results using OpenRouter
    */
   private async verifyResults(goal: AgentGoal, steps: AgentStep[]): Promise<{
     success: boolean;
     result?: any;
     confidence?: number;
   }> {
-    if (!this.initialized) {
-      await this.initialize();
+    if (!this.initialized || !openRouterClient) {
+      return {
+        success: false,
+        confidence: 0,
+      };
     }
 
     const verificationPrompt = `Goal: ${goal.objective}
@@ -423,9 +378,11 @@ Steps taken: ${JSON.stringify(steps.map(s => ({ action: s.action.type, success: 
 Has the goal been accomplished? What is the confidence level?`;
 
     try {
-      const verification = await reason(verificationPrompt);
+      const verification = await openRouterClient.reason(verificationPrompt);
       const verdict = verification.verdict || '';
-      const success = verdict.toLowerCase().includes('yes') || verdict.toLowerCase().includes('accomplished');
+      const success = verdict.toLowerCase().includes('yes') || 
+                     verdict.toLowerCase().includes('accomplished') ||
+                     verdict.toLowerCase().includes('success');
       
       return {
         success,
@@ -435,6 +392,7 @@ Has the goal been accomplished? What is the confidence level?`;
     } catch {
       return {
         success: false,
+        confidence: 0,
       };
     }
   }

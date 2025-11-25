@@ -12,9 +12,17 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist/renderer',
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'src/renderer/index.html'),
+      },
+    },
   },
   server: {
     port: 5173,
+  },
+  define: {
+    'process.env': process.env,
   },
 });
 
