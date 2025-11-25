@@ -114,11 +114,38 @@ The agent will:
 
 ## Tech Stack
 
-- **Electron** - Desktop application framework
+- **Electron** - Desktop application framework (optional)
 - **React + TypeScript** - Frontend UI
 - **Vite** - Build tool
-- **OpenReason** - Adaptive reasoning engine for agentic capabilities
+- **OpenReason** - Adaptive reasoning engine for agentic capabilities (installed from GitHub)
 - **Specialized RE Tools** - Network monitoring, script injection, DOM analysis, etc.
+
+## Deployment
+
+### Vercel (Web)
+
+The app is configured for Vercel deployment:
+
+1. Connect your GitHub repository to Vercel
+2. Vercel will automatically detect the `vercel.json` configuration
+3. Deploy!
+
+The web version:
+- Works in browsers with web-compatible tools
+- Uses iframe for browser view
+- Has enhanced fallback reasoning if OpenReason fails to load
+- All tools work via web APIs (Performance API, DOM APIs, etc.)
+
+### Electron (Desktop)
+
+For desktop deployment:
+
+```bash
+npm run build
+npm start
+```
+
+The Electron version has access to more powerful tools like network interception via Electron's session API.
 
 ## How It Works
 
